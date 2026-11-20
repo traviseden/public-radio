@@ -3,12 +3,16 @@ name: Validate Station Files
 on:
   pull_request:
     paths:
-      - "stations/*.yaml"
-      - "scripts/validate_stations.py"
+      - "data/stations/*.yaml"
+      - "data/scripts/validate_stations.py"
+      - ".github/workflows/validate-stations.yml"
 
 jobs:
   validate:
     runs-on: ubuntu-slim
+    defaults:
+      run:
+        working-directory: data
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7

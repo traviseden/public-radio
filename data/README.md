@@ -34,9 +34,9 @@ We will also need the FM service contour data. Note that this does not include A
 
 ## Building the Database and Launching Datasette
 
-The project uses a `Makefile` and [uv](https://docs.astral.sh/uv/) to manage tasks. If you don't have uv on your machine, you will need to [install](https://docs.astral.sh/uv/getting-started/installation/) it.  On first run, `uv` creates a `.venv` and installs dependencies from `pyproject.toml`. Run all `make` commands from the repo root, since the scripts use paths relative to it.
+The project uses a `Makefile` and [uv](https://docs.astral.sh/uv/) to manage tasks. If you don't have uv on your machine, you will need to [install](https://docs.astral.sh/uv/getting-started/installation/) it. On first run, `uv` creates a `.venv` and installs dependencies from `pyproject.toml`. From the repo root, run `cd data` before using the `make` commands below, since the scripts use paths relative to `data/`.
 
-1. Download the FCC files listed above and extract them into a `tables/` directory at the root of the repo. You may need to create the directory if it does not exist (the build reads `tables/*.dat`).
+1. Download the FCC files listed above and extract them into `data/tables/`. You may need to create the directory if it does not exist (the build reads `tables/*.dat` from `data/`).
 
 2. Build the SQLite database:
 

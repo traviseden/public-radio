@@ -8,7 +8,7 @@ help:
 	@echo "  make validate         Validate station YAML files (all, or FILES=\"stations/WBHM.yaml ...\")"
 	@echo "  make launch-datasette Launch a local datasette instance"
 
-# create_db.py uses paths relative to the repo root, so run make from here.
+# create_db.py uses paths relative to this directory, so run make from here.
 # uv creates .venv and installs dependencies from pyproject.toml on first run.
 db:
 	uv run scripts/create_db.py
