@@ -16,7 +16,7 @@ Our aims are:
 
 You will need to download the following public FCC Database Files to the tables directory in order to generate the database locally via a script. An index of the files can be found here: [LMS Public Database Files](https://enterpriseefiling.fcc.gov/dataentry/public/tv/lmsDatabase.html#). Individual links to the tables relevant to this work are provided below.
 
-- [application_facility](https://enterpriseefiling.fcc.gov/dataentry/api/download/dbfile/10-14-2026/application_facility.zip)
+- [application_facility](https://enterpriseefiling.fcc.gov/dataentry/api/download/dbfile/11-03-2026/application_facility.zip)
 - [application](https://enterpriseefiling.fcc.gov/dataentry/api/download/dbfile/11-03-2026/application.zip)
 - [facility](https://enterpriseefiling.fcc.gov/dataentry/api/download/dbfile/11-03-2026/facility.zip)
 - [facility_applicant](https://enterpriseefiling.fcc.gov/dataentry/api/download/dbfile/11-03-2026/facility_applicant.zip)
