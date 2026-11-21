@@ -1,0 +1,15 @@
+{
+  "name": "public-radio-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "7.4.13",
+    "leaflet": "1.9.4",
+    "leaflet-webcomponents": "file:vendor/leaflet-webcomponents-0.1.0-alpha.1.tgz"
+  }
+}
