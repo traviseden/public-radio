@@ -1,8 +1,10 @@
-.PHONY: help db stations stations-force validate census-sample
+.PHONY: help db web-db check-web-db stations stations-force validate census-sample
 
 help:
 	@echo "Targets:"
 	@echo "  make db               Build public_radio_facility_data.sqlite from tables/*.dat"
+	@echo "  make web-db           Build the separate national public-radio dashboard snapshot from the full DB and Census downloads"
+	@echo "  make check-web-db     Check the dashboard snapshot, lookup plans and overlap arithmetic"
 	@echo "  make census-sample    Fetch DC boundaries and Census dictionaries for both demographic options"
 	@echo "  make stations         Generate stations/<CALLSIGN>.yaml (skips existing files)"
 	@echo "  make stations-force   Regenerate all station files, overwriting existing ones"
@@ -13,6 +15,13 @@ help:
 # uv creates .venv and installs dependencies from pyproject.toml on first run.
 db:
 	uv run scripts/create_db.py
+
+web-db:
+	uv run --extra reach scripts/build_web_db.py
+
+check-web-db:
+	uv run --extra reach python -m unittest discover -s tests
+	uv run scripts/check_web_db.py
 
 census-sample:
 	uv run scripts/census_sample.py

@@ -11,5 +11,13 @@ dependencies = [
     "pyyaml",
 ]
 
+[project.optional-dependencies]
+reach = [
+    "numpy>=2.2.6",
+    "pyogrio>=0.13.0",
+    "pyproj>=3.7.1",
+    "shapely>=2.1.2",
+]
+
 [tool.uv]
 package = false

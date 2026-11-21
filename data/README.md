@@ -56,6 +56,36 @@ The project uses a `Makefile` and [uv](https://docs.astral.sh/uv/) to manage tas
 
 Run `make help` to see all available targets, including `stations`, `stations-force`, and `validate` for working with the station YAML files.
 
+## Dashboard database
+
+`make db` remains the complete FCC import for research and Datasette. `make web-db` reads that database **read-only** and atomically builds the separate `web.sqlite` used by Astro. It does not rebuild or overwrite the full database. The compact snapshot is intentionally versioned so a Cloudflare build doesn't have to download national inputs.
+
+```sh
+cd data
+make db             # if you haven't built the full FCC DB from the source files
+make web-db         # keyless national build; first run caches ~2.5 GB
+make check-web-db   # includes EXPLAIN QUERY PLAN checks
+```
+
+The optional `reach` extra adds Shapely, pyproj, Pyogrio's TIGER reader and NumPy to the builder only. `downloads/reach/` caches 2020 Census state P.L. archives, 2024 TIGER block groups and seven ACS 2020–24 Detailed Tables for all states, DC and Puerto Rico. A rerun checks cached input hashes against the previous manifest. The original FCC files and individual Census units do **not** ship in `web.sqlite`.
+
+**Selection.** The allowlist is `station_index.csv` rows of type Radio or Both. Callsign, state and exact roster filing links identify FCC facilities. Educational FM/LPFM facilities can qualify automatically. `reviewed_facilities.csv` supports individually corroborated public operators, including public broadcasters on commercial-designated channels. Neither flag nor affiliation on its own adds an off-roster station. A selected contour must uniquely match the facility's license and an active, granted primary filing. Ambiguous, auxiliary, AM/TV, unmatched and unsupported records are not assigned a fabricated population. Keep the roster ID stable when reviewing a match.
+
+**Owners.** Populated station YAMLs take precedence; if the control field is `N` a named licensee can be its own owner under the project's schema. Otherwise only exact licensees with evidence in `documented_owners.csv` are grouped. Do not merge by an NPR affiliation, similar name, or historic FRN alone. Owner totals are for documented roster members only. Union their polygons first; if a member lacks an eligible footprint, withhold the complete result. To extend coverage, add a sourced parent relationship, rerun and review the membership and overlap.
+
+**Measurement.** The P.L. geographic header supplies 2020 residents and internal points (summary level `750`); segment 02, H1, supplies occupied units joined by `LOGRECNO`. Cross-check occupied + vacant against the block header. Spatially assign those points to actual 2024 BGs, not truncated 2020 identifiers. Whole BGs receive weight one; for partially intersecting BGs use the covered share of resident points weighted by population, or by occupied units for households. Missing support or missing published estimates are flagged separately from zero. The web tables contain modeled counts, not averages of percentages or medians. Sampling margins use a weighted root-sum-of-squares approximation; they do not include geographic allocation error. A point on a footprint boundary counts once. Foreign populations and Island Areas without comparable ACS coverage are not imputed.
+
+**Lookups.** `target` stores geometry once, 2020 totals and stable station/owner IDs. `station` has state, affiliation, licensee, facility, owner and application/site indexes. `target(kind,name COLLATE NOCASE,id)` supports prefix directory lookup; `profile(target_id,metric_id)` and `metric(id)` serve detail pages. `footprint_key` maps the text IDs to integer R\*Tree keys; `footprint_bounds` finds spatial candidates. Recheck the actual polygons for point or area coverage rather than treating an envelope as the footprint:
+
+```sql
+SELECT k.target_id FROM footprint_bounds AS b
+JOIN footprint_key AS k USING (spatial_id)
+WHERE b.west <= :longitude AND b.east >= :longitude
+  AND b.south <= :latitude AND b.north >= :latitude;
+```
+
+The browser filters a small, prebuilt directory. The R\*Tree is for build/export and local spatial lookups, not a live Cloudflare dependency. `make check-web-db` checks the snapshot and the selected index plans without downloading new data. For raw source URLs and hashes see the build table or the site's `/sources.json`.
+
 ## Comparing demographic sources
 
 Run `make census-sample` from `data/` for a District of Columbia pilot. It downloads the 2020 Census DHC P1 and 2020–2024 ACS B01003 variable dictionaries, the **2020 census blocks** and **2024 block groups**, and writes a source/size/SHA-256 manifest to `downloads/census-sample/`. With `CENSUS_API_KEY` set, it also requests DC population observations (and the ACS margin of error) as CSV with string GEOIDs. Use the manifest to identify the files fetched by a given run. This is a source comparison, not a WAMU coverage extract: WAMU crosses the DC border. It does not modify the FCC database.
