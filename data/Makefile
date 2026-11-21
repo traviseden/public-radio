@@ -1,8 +1,9 @@
-.PHONY: help db stations stations-force validate
+.PHONY: help db stations stations-force validate census-sample
 
 help:
 	@echo "Targets:"
 	@echo "  make db               Build public_radio_facility_data.sqlite from tables/*.dat"
+	@echo "  make census-sample    Fetch DC boundaries and Census dictionaries for both demographic options"
 	@echo "  make stations         Generate stations/<CALLSIGN>.yaml (skips existing files)"
 	@echo "  make stations-force   Regenerate all station files, overwriting existing ones"
 	@echo "  make validate         Validate station YAML files (all, or FILES=\"stations/WBHM.yaml ...\")"
@@ -12,6 +13,9 @@ help:
 # uv creates .venv and installs dependencies from pyproject.toml on first run.
 db:
 	uv run scripts/create_db.py
+
+census-sample:
+	uv run scripts/census_sample.py
 
 stations:
 	uv run scripts/generate_stations.py

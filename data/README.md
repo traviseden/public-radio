@@ -56,6 +56,14 @@ The project uses a `Makefile` and [uv](https://docs.astral.sh/uv/) to manage tas
 
 Run `make help` to see all available targets, including `stations`, `stations-force`, and `validate` for working with the station YAML files.
 
+## Comparing demographic sources
+
+Run `make census-sample` from `data/` for a District of Columbia pilot. It downloads the 2020 Census DHC P1 and 2020–2024 ACS B01003 variable dictionaries, the **2020 census blocks** and **2024 block groups**, and writes a source/size/SHA-256 manifest to `downloads/census-sample/`. With `CENSUS_API_KEY` set, it also requests DC population observations (and the ACS margin of error) as CSV with string GEOIDs. Use the manifest to identify the files fetched by a given run. This is a source comparison, not a WAMU coverage extract: WAMU crosses the DC border. It does not modify the FCC database.
+
+The downloaded DC block shapefile itself includes `GEOID20`, `POP20`, and `HOUSING20`. In the sample its 6,012 blocks sum to 689,545 residents and 350,364 housing units; only 4,500 blocks report residents. That makes it a useful baseline without an API key. The 571 block-group shapes do **not** contain ACS demographics; join the estimate and MOE by GEOID. Preserve leading zeros.
+
+See [Radio reach data choices](reports/Radio%20reach%20data%20choices.md) for geography, table choices, uncertainty and SQLite spatial options before choosing a national ingestion path.
+
 ## Relevant FCC Radio Service Codes
 
 https://wiki.radioreference.com/index.php/FCC_Radio_Service_Codes
