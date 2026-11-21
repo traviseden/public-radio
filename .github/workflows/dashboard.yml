@@ -1,0 +1,23 @@
+name: Check dashboard
+on:
+  push:
+    paths: ['website/**', 'data/web.sqlite', 'data/scripts/*reach*', 'data/scripts/*web_db*', 'data/tests/**', '.github/workflows/dashboard.yml']
+  pull_request:
+    paths: ['website/**', 'data/web.sqlite', 'data/scripts/*reach*', 'data/scripts/*web_db*', 'data/tests/**', '.github/workflows/dashboard.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - uses: astral-sh/setup-uv@v7
+      - name: Verify snapshot, actual index use and geometry arithmetic
+        working-directory: data
+        run: make check-web-db
+      - name: Build static assets from the checked-in snapshot
+        working-directory: website
+        run: npm ci && npm run build

@@ -1,5 +1,15 @@
 # Public radio website
 
-From this directory run `npm ci`, then `npm run dev` for local development or `npm run build` for a static site in `dist/`.
+From this directory, use Node 24, `npm ci`, then `npm run dev` for local development or `npm run build` for a static site in `dist/`. Astro reads the checked-in compact snapshot (`../data/web.sqlite`) **only at build time** using `node:sqlite` and bound `sql-template-tag` queries. A clean checkout can build the site without the full FCC database, a Census key, Python, D1, or a live API.
 
-The `vendor/` tarball is the unpublished `leaflet-webcomponents` package. It and Leaflet are installed from `package-lock.json`; the hello-world page does not load either into the browser. For a future map, register the components in an Astro client `<script>`, not in server-side frontmatter. FCC and demographic data preparation belongs in `../data/`.
+The station directory supports call sign, city, licensee, documented owner, location and estimate-availability filters. Only transmitter coordinates are embedded in the directory. Station and owner pages load one local GeoJSON outline; map tiles use OpenStreetMap with attribution. Links, the directory, ownership lists and profile tables work without JavaScript. The `vendor/` tarball is pinned in the lockfile.
+
+## Cloudflare
+
+- **Workers Static Assets:** root directory `website`, build `npm ci && npm run build`, deploy `npx wrangler deploy` with `wrangler.jsonc`. Only run the deploy command when ready to publish.
+- **Pages:** root `website`, build `npm run build`, output `dist`, Node 24. No adapter, runtime bindings, secrets, or database upload. Preserve the full repository checkout so the build can read `../data/web.sqlite`.
+- Publish only `dist/`. The database, authoring tools and Census downloads do not belong in the public asset directory.
+
+## Refresh and verify
+
+From the project root, `make -C data web-db check-web-db`, review the changed snapshot, then rebuild Astro. `/methods/` documents the population model and `/sources.json` gives input checksums. See [the data workflow](../data/README.md#dashboard-database).

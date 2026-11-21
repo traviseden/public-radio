@@ -1,0 +1,28 @@
+---
+const {outline, label, directory=false} = Astro.props;
+---
+<leaflet-map id="coverage-map" center="38,-96" zoom="4" scroll-wheel-zoom="false" aria-label={label}>
+  <leaflet-tile-layer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" max-zoom="18" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'></leaflet-tile-layer>
+  {outline && <leaflet-region src={outline} fit-bounds color="#0f766e" weight="2" fill-opacity=".23"></leaflet-region>}
+  {directory && <leaflet-geojson id="station-points" geojson='{"type":"FeatureCollection","features":[]}'></leaflet-geojson>}
+</leaflet-map>
+<p id="map-message" class="note" role="status"></p>
+<script>
+  import L from 'leaflet';
+  import 'leaflet/dist/leaflet.css';
+  import 'leaflet-webcomponents/styles.css';
+  import {register} from 'leaflet-webcomponents/core';
+  const map = document.querySelector('#coverage-map')!;
+  map.addEventListener('leaflet:error', () => {
+    document.querySelector('#map-message')!.textContent='Map unavailable. The data below are still available.';
+  });
+  register({leaflet:L});
+  const points = document.querySelector('leaflet-geojson');
+  if (points) {
+    points.options = {pointToLayer: (_feature,xy) => L.circleMarker(xy,{radius:5,color:'#064d48',weight:1,fillColor:'#13847c',fillOpacity:.84})};
+    points.addEventListener('leaflet:featureclick', e => {
+      const id = (e as CustomEvent).detail.featureId;
+      document.getElementById(`link-${id}`)?.click();
+    });
+  }
+</script>

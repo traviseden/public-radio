@@ -1,0 +1,39 @@
+---
+import Page from '../../layouts/Page.astro';
+import Map from '../../components/Map.astro';
+import {targets, detail, number,built,shares} from '../../lib/snapshot.mjs';
+export function getStaticPaths(){
+  return targets().map(t=>({params:{section:t.kind==='station'?'stations':'owners',id:t.id}}));
+}
+const {item,station,metrics,members}=detail(Astro.params.id);
+const isStation=item.kind==='station';
+const percentages=shares(metrics);
+---
+<Page title={item.name}>
+  <a class="crumb" href={isStation?'/':'/owners/'}>← {isStation?'Station directory':'Documented owners'}</a>
+  <h1>{item.name}</h1>
+  <p>{isStation ? `${station.city}, ${station.state}` : `Combined footprint of ${members.length} documented roster stations`}</p>
+  <h2>Potential residential reach</h2>
+  <p><strong class="estimate">{number(item.residents)}</strong>{item.residents!=null && ' residents · 2020 Census'}</p>
+  {item.residents==null ? <p class="notice">{station?.reason ?? (item.mapped?'No coverage in the supported Census geography.':'Not all linked stations have an eligible footprint.')}</p> :
+    <p class="note">People assigned by their census block’s internal point within the modeled {isStation?'station contour':'union of station contours'}. This is not an audience estimate.</p>}
+  {item.mapped && <Map outline={`/outlines/${item.id}.geojson`} label={`Predicted FM footprint for ${item.name}`} />}
+  {station && <><h2>Station record</h2><dl class="facts">
+    <div><dt>Roster licensee</dt><dd>{station.licensee||'Unknown'}</dd></div>
+    <div><dt>Parent organization</dt><dd>{station.owner?<a href={`/owners/${station.owner}/`}>{station.owner_name}</a>:'Not documented'}</dd></div>
+    <div><dt>FCC facility ID</dt><dd>{station.facility??'Not matched'}</dd></div>
+    {station.application && <div><dt>LMS application / site</dt><dd>{station.application} / {station.site}</dd></div>}
+  </dl>{station.operator_source && <p><a href={station.operator_source}>Public operator evidence</a></p>}</>}
+  {!isStation && <><h2>Included roster stations</h2><ul>{members.map(s=><li><a href={`/stations/${s.id}/`}>{s.name}</a> · {s.state}{s.reason && ` · ${s.reason}`}</li>)}</ul>
+    {[...new Set(members.map(s=>s.evidence))].map(e=>e?.startsWith('https://')?<p><a href={e}>Ownership source</a></p>:<p>{e}</p>)}</>}
+  <h2>Demographic profile</h2>
+  {metrics.length ? <>
+  <p class="intro">2020–2024 American Community Survey. These modeled counts describe a five-year period, not the same date as the 2020 resident estimate. Income brackets use 2024 dollars.</p>
+  {item.unassigned_residents>0 && <p class="notice">{number(item.unassigned_residents)} residents in the baseline could not be assigned to a 2024 block group; profile weights exclude them.</p>}
+  {metrics.some(m=>m.missing_groups) && <p class="notice">Some cut block groups lack a usable estimate or 2020 weighting population. A subtotal below excludes the unresolved groups. Its margin and percentage are withheld.</p>}
+  <div class="scroll"><table><caption>Shares use counts from the same table and universe. The approximate 90% margin applies to the count, not to the percentage.</caption>
+    <thead><tr><th scope="col">Measure</th><th scope="col">Population or unit</th><th scope="col" class="num">Estimated count</th><th scope="col" class="num">Margin (±)</th><th scope="col" class="num">Share</th></tr></thead><tbody>
+    {metrics.map(m=><tr><th scope="row">{m.label}</th><td>{m.universe}</td><td class="num">{m.missing_groups?`${number(m.estimate)} subtotal (${m.missing_groups} groups unresolved)`:number(m.estimate)}</td><td class="num">{number(m.moe90)}</td><td class="num">{percentages.get(m.id)??'—'}</td></tr>)}
+    </tbody></table></div></> : <p>No supported footprint estimate; demographic values are unknown, not zero.</p>}
+  <p class="note">Built {built}. <a href="/methods/">Sources, eligibility and uncertainty</a></p>
+</Page>

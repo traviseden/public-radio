@@ -1,0 +1,13 @@
+---
+import '../styles/site.css';
+const {title} = Astro.props;
+---
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>{title} · Public radio reach</title></head>
+<body><a class="skip" href="#main">Skip to content</a>
+<header><nav aria-label="Main"><a href="/" class="brand">Public radio reach</a>
+<a href="/">Stations</a><a href="/owners/">Owners</a><a href="/methods/">Methods</a></nav></header>
+<main id="main"><slot /></main>
+<footer>Public radio reach · FCC modeled FM service areas and U.S. Census data</footer>
+</body></html>

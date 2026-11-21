@@ -1,0 +1,10 @@
+---
+import Page from '../layouts/Page.astro';
+import {owners,number} from '../lib/snapshot.mjs';
+const rows=owners();
+---
+<Page title="Documented owners"><h1>Documented owners</h1>
+<p class="intro">Residents inside the combined footprints of roster stations with a documented parent. Where stations overlap, residents count once. These figures cover linked roster entries, not every transmitter an organization might operate.</p>
+{rows.length ? <div class="scroll"><table><thead><tr><th>Owner</th><th>Roster stations</th><th class="num">2020 resident reach</th></tr></thead><tbody>
+{rows.map(r=><tr><th scope="row"><a href={`/owners/${r.id}/`}>{r.name}</a></th><td>{r.members}</td><td class="num">{number(r.residents)}</td></tr>)}</tbody></table></div> : <p>No verified owner groups are available in this snapshot.</p>}
+<p class="note">A network affiliation or a shared format is not evidence of ownership. Unresolved stations remain in the <a href="/">directory</a>.</p></Page>
