@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --host",
     "build": "astro build",
     "preview": "astro preview"
   },
@@ -12,5 +12,8 @@
     "leaflet": "1.9.4",
     "leaflet-webcomponents": "file:vendor/leaflet-webcomponents-0.1.0-alpha.1.tgz",
     "sql-template-tag": "^5.2.1"
+  },
+  "devDependencies": {
+    "uqr": "^0.1.3"
   }
 }

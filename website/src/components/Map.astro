@@ -19,10 +19,25 @@ const {outline, label, directory=false} = Astro.props;
   register({leaflet:L});
   const points = document.querySelector('leaflet-geojson');
   if (points) {
-    points.options = {pointToLayer: (_feature,xy) => L.circleMarker(xy,{radius:5,color:'#064d48',weight:1,fillColor:'#13847c',fillOpacity:.84})};
-    points.addEventListener('leaflet:featureclick', e => {
-      const id = (e as CustomEvent).detail.featureId;
-      document.getElementById(`link-${id}`)?.click();
-    });
+    points.options = {
+      pointToLayer: (_feature,xy) => L.circleMarker(xy,{radius:5,color:'#064d48',weight:1,fillColor:'#13847c',fillOpacity:.84}),
+      onEachFeature(feature,layer) {
+        layer.bindPopup(() => {
+          const {name,location,reach}=feature.properties!;
+          const excerpt=document.createElement('div');
+          const title=document.createElement('strong');
+          const place=document.createElement('div');
+          const estimate=document.createElement('p');
+          const link=document.createElement('a');
+          title.textContent=name;
+          place.textContent=location;
+          estimate.textContent=`2020 resident reach: ${reach}`;
+          link.href=`/stations/${encodeURIComponent(String(feature.id))}/`;
+          link.textContent=`View ${name} profile`;
+          excerpt.append(title,place,estimate,link);
+          return excerpt;
+        });
+      },
+    };
   }
 </script>

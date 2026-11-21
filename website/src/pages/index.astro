@@ -13,26 +13,51 @@ const rows = stations(), states = [...new Set(rows.map(r=>r.state))].sort();
     <label>Data available<select id="availability"><option value="">All entries</option><option value="reach">Resident estimate</option><option value="missing">No estimate</option></select></label>
   </form>
   <p id="count" role="status">{rows.length} roster entries</p>
-  <Map directory label="Transmitters matching the station filters" />
-  <p class="note">Points show transmitter sites with eligible contours. Select a point or station name for its footprint and demographics. Alaska, Hawaii and territories can be located with the location filter.</p>
+  <div class="directory-layout">
+  <section class="station-results">
   <h2>Station results</h2>
-  <div class="scroll"><table id="directory"><thead><tr><th scope="col">Station</th><th scope="col">Location</th><th scope="col">Licensee on roster</th><th scope="col" class="num">2020 resident reach</th></tr></thead><tbody>
-  {rows.map(r=><tr data-id={r.id} data-name={r.name} data-state={r.state} data-owner={r.owner_name??''} data-has={r.residents!=null?'reach':'missing'} data-lat={r.lat} data-lon={r.lon}>
-    <th scope="row"><a id={`link-${r.id}`} href={`/stations/${r.id}/`}>{r.name}</a></th><td>{r.city}, {r.state}</td><td>{r.licensee||'Unknown'}</td><td class="num">{number(r.residents)}</td>
-  </tr>)}</tbody></table></div>
+  <div class="station-columns" aria-hidden="true"><strong>Station</strong><strong>Location</strong><strong>Licensee on roster</strong><strong class="num">2020 resident reach</strong></div>
+  <ul id="directory" role="list">
+  {rows.map(r=><li data-id={r.id} data-name={r.name} data-state={r.state} data-owner={r.owner_name??''} data-has={r.residents!=null?'reach':'missing'} data-lat={r.lat} data-lon={r.lon}>
+    <a class="station-name" id={`link-${r.id}`} href={`/stations/${r.id}/`}>{r.name}</a>
+    <dl>
+      <div><dt>Location</dt><dd class="location">{r.city}, {r.state}</dd></div>
+      <div><dt>Licensee on roster</dt><dd class="licensee">{r.licensee||'Unknown'}</dd></div>
+      <div class="num"><dt>2020 resident reach</dt><dd>{number(r.residents)}</dd></div>
+    </dl>
+  </li>)}</ul>
   <nav class="pager" id="pager" aria-label="Station result pages" hidden><button id="prev">Previous</button><span id="position"></span><button id="next">Next</button></nav>
+  </section>
+  <div class="directory-map">
+    <button type="button" id="map-toggle" aria-haspopup="dialog" aria-controls="map-panel" hidden>Show map</button>
+    <dialog id="map-panel" aria-label="Station map" open>
+      <button type="button" id="map-close" aria-label="Close map" autofocus>
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+      <Map directory label="Transmitters matching the station filters" />
+      <p class="note">Select a transmitter point for a station summary, or open its profile for the footprint and demographics.</p>
+    </dialog>
+  </div>
+  </div>
 </Page>
 <script>
   const form = document.querySelector<HTMLFormElement>('#filters')!;
   const search = document.querySelector<HTMLInputElement>('#search')!;
   const state = document.querySelector<HTMLSelectElement>('#state')!;
   const available = document.querySelector<HTMLSelectElement>('#availability')!;
-  const rows = [...document.querySelectorAll<HTMLTableRowElement>('#directory tbody tr')];
+  const rows = [...document.querySelectorAll<HTMLElement>('#directory li')];
+  const searchable = new Map(rows.map(r=>[r, [r.dataset.name,r.querySelector('.location')?.textContent,r.querySelector('.licensee')?.textContent,r.dataset.owner].join(' ').toLowerCase()]));
   const prev = document.querySelector<HTMLButtonElement>('#prev')!, next = document.querySelector<HTMLButtonElement>('#next')!;
-  const size=30;
-  let page=0, matched=rows;
+  const mobile=matchMedia('(max-width: 600px)');
+  const toggle=document.querySelector<HTMLButtonElement>('#map-toggle')!;
+  const panel=document.querySelector<HTMLDialogElement>('#map-panel')!;
+  const closeMap=document.querySelector<HTMLButtonElement>('#map-close')!;
+  let returnPosition: [number, number] | undefined;
+  let page=Number(history.state?.directory?.page)||0, matched=rows;
   function paginate() {
+    const size=mobile.matches?10:30;
     const pages=Math.max(1, Math.ceil(matched.length/size));
+    page=Math.max(0,Math.min(page,pages-1));
     const visible=new Set(matched.slice(page*size,(page+1)*size));
     rows.forEach(r=>r.hidden=!visible.has(r));
     prev.disabled=page===0; next.disabled=page+1>=pages;
@@ -43,23 +68,67 @@ const rows = stations(), states = [...new Set(rows.map(r=>r.state))].sort();
     const term=search.value.trim().toLowerCase();
     matched=rows.filter(r=>(!state.value||r.dataset.state===state.value) &&
       (!available.value||available.value===r.dataset.has) &&
-      (!term||`${r.dataset.name} ${r.cells[1].textContent} ${r.cells[2].textContent} ${r.dataset.owner}`.toLowerCase().includes(term)));
-    page=0; paginate();
+      (!term||searchable.get(r)!.includes(term)));
+    if(updateURL) page=0;
+    paginate();
     const mapped=matched.filter(r=>r.dataset.lat && r.dataset.lon);
     document.querySelector('#count')!.textContent=`${matched.length} matching stations · ${mapped.length} mapped`;
     const points=document.querySelector('leaflet-geojson')!;
     points.data={type:'FeatureCollection',features:mapped.map(r=>({type:'Feature',id:r.dataset.id,
-      properties:{name:r.dataset.name}, geometry:{type:'Point',coordinates:[Number(r.dataset.lon),Number(r.dataset.lat)]}}))};
-    const map=document.querySelector('leaflet-map')?.map;
-    if(map && (term||state.value||available.value) && mapped.length) {
-      map.fitBounds(mapped.map(r=>[Number(r.dataset.lat),Number(r.dataset.lon)] as [number,number]),{maxZoom:9,padding:[16,16],animate:false});
-    } else if(map && mapped.length) map.setView([38,-96],4,{animate:false});
+      properties:{name:r.dataset.name,location:r.querySelector('.location')?.textContent,reach:r.querySelector('.num dd')?.textContent},
+      geometry:{type:'Point',coordinates:[Number(r.dataset.lon),Number(r.dataset.lat)]}}))};
+    fitMap();
     if(updateURL) {
       const url=new URL(location.href);
       for(const [k,v] of [['q',search.value],['state',state.value],['data',available.value]]) v?url.searchParams.set(k,v):url.searchParams.delete(k);
-      history.replaceState(null,'',url);
+      history.replaceState({...history.state,directory:null},'',url);
     }
   }
+  function fitMap() {
+    const map=document.querySelector('leaflet-map')?.map;
+    if(!map || !panel.clientWidth) return;
+    map.invalidateSize({pan:false});
+    const coords=matched.filter(r=>r.dataset.lat && r.dataset.lon).map(r=>[Number(r.dataset.lat),Number(r.dataset.lon)] as [number,number]);
+    if((search.value.trim()||state.value||available.value) && coords.length) map.fitBounds(coords,{maxZoom:9,padding:[16,16],animate:false});
+    else map.setView([38,-96],4,{animate:false});
+  }
+  toggle.hidden=false;
+  toggle.addEventListener('click',()=>{
+    returnPosition=[window.scrollX,window.scrollY];
+    panel.showModal();
+    closeMap.focus({preventScroll:true});
+    requestAnimationFrame(fitMap);
+  });
+  closeMap.addEventListener('click',()=>panel.close());
+  panel.addEventListener('close',()=>{
+    if(returnPosition && mobile.matches && !panel.open) {
+      toggle.focus({preventScroll:true});
+      window.scrollTo({left:returnPosition[0],top:returnPosition[1],behavior:'instant'});
+    }
+    returnPosition=undefined;
+  });
+  function syncMapMode() {
+    if(panel.matches(':modal')) panel.close();
+    panel.open=!mobile.matches;
+  }
+  syncMapMode();
+  // Save on this history entry (not globally): two directory visits can have
+  // different filters, result pages and reading positions.
+  document.addEventListener('click',e=>{
+    const a=e.target instanceof Element ? e.target.closest('a') : null;
+    if(!a || a.origin!==location.origin || !a.pathname.startsWith('/stations/') ||
+       e.defaultPrevented || e.button!==0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target==='_blank') return;
+    history.replaceState({...history.state,directory:{page,y:returnPosition?.[1]??scrollY}},'');
+  }, {capture:true}); // Leaflet stops popup clicks before they bubble to document.
+  window.addEventListener('pageshow',()=>{
+    const saved=history.state?.directory;
+    if(!saved) return;
+    if(panel.matches(':modal')) panel.close();
+    page=saved.page;
+    paginate();
+    requestAnimationFrame(()=>window.scrollTo({top:saved.y,behavior:'instant'}));
+  });
+  mobile.addEventListener('change',()=>{syncMapMode();page=0;paginate();requestAnimationFrame(fitMap)});
   const initial=new URLSearchParams(location.search);
   search.value=initial.get('q')??''; state.value=initial.get('state')??''; available.value=initial.get('data')??'';
   form.hidden=false;

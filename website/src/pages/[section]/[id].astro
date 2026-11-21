@@ -10,7 +10,7 @@ const isStation=item.kind==='station';
 const percentages=shares(metrics);
 ---
 <Page title={item.name}>
-  <a class="crumb" href={isStation?'/':'/owners/'}>← {isStation?'Station directory':'Documented owners'}</a>
+  <a class="crumb" data-directory-link={isStation||undefined} href={isStation?'/':'/owners/'}>← {isStation?'Station directory':'Documented owners'}</a>
   <h1>{item.name}</h1>
   <p>{isStation ? `${station.city}, ${station.state}` : `Combined footprint of ${members.length} documented roster stations`}</p>
   <h2>Potential residential reach</h2>
@@ -37,3 +37,17 @@ const percentages=shares(metrics);
     </tbody></table></div></> : <p>No supported footprint estimate; demographic values are unknown, not zero.</p>}
   <p class="note">Built {built}. <a href="/methods/">Sources, eligibility and uncertainty</a></p>
 </Page>
+<script>
+  const ref=document.referrer && new URL(document.referrer);
+  if(location.pathname.startsWith('/stations/') && ref && ref.origin===location.origin && ref.pathname==='/') {
+    for(const link of document.querySelectorAll<HTMLAnchorElement>('[data-directory-link]')) {
+      link.href=ref.href;
+      link.addEventListener('click',e=>{
+        if(history.length>1 && e.button===0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+          e.preventDefault();
+          history.back();
+        }
+      });
+    }
+  }
+</script>

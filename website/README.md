@@ -4,6 +4,8 @@ From this directory, use Node 24, `npm ci`, then `npm run dev` for local develop
 
 The station directory supports call sign, city, licensee, documented owner, location and estimate-availability filters. Only transmitter coordinates are embedded in the directory. Station and owner pages load one local GeoJSON outline; map tiles use OpenStreetMap with attribution. Links, the directory, ownership lists and profile tables work without JavaScript. The `vendor/` tarball is pinned in the lockfile.
 
+`npm run dev` listens on the local network and prints a terminal QR code for the actual network URL. Scan it from a phone on the same Wi-Fi. Press Ctrl+C to stop.
+
 ## Cloudflare
 
 - **Workers Static Assets:** root directory `website`, build `npm ci && npm run build`, deploy `npx wrangler deploy` with `wrangler.jsonc`. Only run the deploy command when ready to publish.
