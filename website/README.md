@@ -8,7 +8,7 @@ The station directory supports call sign, city, licensee, documented owner, loca
 
 ## Cloudflare
 
-- **Workers Static Assets:** root directory `website`, build `npm ci && npm run build`, deploy `npx wrangler deploy` with `wrangler.jsonc`. Only run the deploy command when ready to publish.
+- **Workers Static Assets:** from `website/`, build with `npm ci && npm run build`, then run `npx --yes cf@1.0.0-rc.2 deploy ./dist` to publish the static assets as `public-radio-reach-demo`.
 - **Pages:** root `website`, build `npm run build`, output `dist`, Node 24. No adapter, runtime bindings, secrets, or database upload. Preserve the full repository checkout so the build can read `../data/web.sqlite`.
 - Publish only `dist/`. The database, authoring tools and Census downloads do not belong in the public asset directory.
 
